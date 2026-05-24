@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/Alazar42/GoFront/internal/version"
 )
 
-const version = "0.0.5"
+var Version = version.Version
 
 func Execute(args []string) error {
 	if len(args) == 0 {
@@ -23,7 +25,7 @@ func Execute(args []string) error {
 	case "serve":
 		return runServe(args[1:])
 	case "version":
-		fmt.Println(version)
+		fmt.Println(Version)
 		return nil
 	case "help", "-h", "--help":
 		return runHelp()

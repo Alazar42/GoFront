@@ -6,6 +6,8 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/Alazar42/GoFront/internal/version"
 )
 
 func Scaffold(root string, moduleName string) error {
@@ -84,8 +86,8 @@ func moduleFile(root string, moduleName string) (string, error) {
 	} else {
 		// When no local gofront module is present, scaffold against the
 		// published module path and tag so generated apps can `go get` the
-		// released dependency. Update this tag when releasing newer versions.
-		builder.WriteString("\nrequire github.com/Alazar42/GoFront v0.0.4\n")
+		// released dependency. Version is automatically kept in sync with the CLI version.
+		builder.WriteString(fmt.Sprintf("\nrequire github.com/Alazar42/GoFront v%s\n", version.Version))
 	}
 
 	return builder.String(), nil
