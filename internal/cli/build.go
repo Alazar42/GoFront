@@ -2,6 +2,7 @@ package cli
 
 import (
 	"flag"
+	"fmt"
 
 	"gofront/internal/compiler"
 	"gofront/internal/config"
@@ -13,6 +14,11 @@ func runBuild(args []string) error {
 	}
 	fs := flag.NewFlagSet("build", flag.ContinueOnError)
 	fs.SetOutput(flag.CommandLine.Output())
+	fs.Usage = func() {
+		fmt.Fprintln(fs.Output(), "Usage: gofront build [options]\n\nBuilds frontend sources into WebAssembly output.")
+		fmt.Fprintln(fs.Output(), "\nExamples:\n  gofront build\n  gofront build --src web --public static --dist out")
+		fs.PrintDefaults()
+	}
 	configPath := fs.String("config", config.DefaultPath, "path to gofront config file")
 	src := fs.String("src", "", "source directory")
 	public := fs.String("public", "", "public directory")

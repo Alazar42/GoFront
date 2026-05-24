@@ -28,7 +28,7 @@ func Execute(args []string) error {
 	case "help", "-h", "--help":
 		return runHelp()
 	default:
-		return fmt.Errorf("unknown command %q", args[0])
+		return fmt.Errorf("unknown command %q\n\nRun `gofront help` to see available commands", args[0])
 	}
 }
 
@@ -41,7 +41,22 @@ func ExitWithError(err error) {
 }
 
 func runHelp() error {
-	_, err := fmt.Fprintln(os.Stdout, "GoFront CLI\n\nCommands:\n  gofront init [name]\n  gofront build [--src dir] [--public dir] [--dist dir]\n  gofront dev [--addr :3000] [--src dir] [--public dir] [--dist dir] [--poll 1000]\n  gofront serve [--addr :3000] [--root dist]\n  gofront version\n\nRun `gofront <command> -h` for command options.")
+	output := "GoFront CLI\n" +
+		"Build frontend apps in Go + WebAssembly.\n\n" +
+		"Usage:\n" +
+		"  gofront <command> [options]\n\n" +
+		"Commands:\n" +
+		"  init     Create a new GoFront project scaffold\n" +
+		"  build    Compile frontend source into dist artifacts\n" +
+		"  dev      Start dev server with auto rebuild + live reload\n" +
+		"  serve    Serve an existing dist directory\n" +
+		"  version  Print installed CLI version\n\n" +
+		"Quick Start:\n" +
+		"  gofront init my-app\n" +
+		"  cd my-app\n" +
+		"  gofront dev\n\n" +
+		"Run `gofront <command> -h` for command-specific options."
+	_, err := fmt.Fprintln(os.Stdout, output)
 	return err
 }
 

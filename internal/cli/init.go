@@ -10,6 +10,10 @@ import (
 func runInit(args []string) error {
 	fs := flag.NewFlagSet("init", flag.ContinueOnError)
 	fs.SetOutput(flag.CommandLine.Output())
+	fs.Usage = func() {
+		fmt.Fprintln(fs.Output(), "Usage: gofront init [name] [--name my-app]\n\nCreate a new GoFront project scaffold.")
+		fs.PrintDefaults()
+	}
 	name := fs.String("name", "", "target directory name")
 	if err := fs.Parse(args); err != nil {
 		return err

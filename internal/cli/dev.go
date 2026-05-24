@@ -19,6 +19,11 @@ func runDev(args []string) error {
 
 	fs := flag.NewFlagSet("dev", flag.ContinueOnError)
 	fs.SetOutput(flag.CommandLine.Output())
+	fs.Usage = func() {
+		fmt.Fprintln(fs.Output(), "Usage: gofront dev [options]\n\nStarts a development server with auto rebuild and live reload.")
+		fmt.Fprintln(fs.Output(), "\nExamples:\n  gofront dev\n  gofront dev --addr :5173 --poll 500")
+		fs.PrintDefaults()
+	}
 	configPath := fs.String("config", config.DefaultPath, "path to gofront config file")
 	addr := fs.String("addr", ":3000", "server address")
 	src := fs.String("src", "", "source directory")
