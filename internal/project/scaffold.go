@@ -92,7 +92,7 @@ func configFile() string {
 }
 
 func gitignoreFile() string {
-	return "dist/\n*.wasm\n*.exe\n.idea/\n.vscode/\n*_gox_gen.go\n*.module.css\n"
+	return "dist/\n*.wasm\n*.exe\n.idea/\n.vscode/\nsrc/.goxgen/\n*.module.css\n"
 }
 
 func indexFile() string {

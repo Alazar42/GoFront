@@ -17,15 +17,28 @@ func TranspileGoxFiles(srcDir string) error {
 			return err
 		}
 		if strings.HasSuffix(path, ".gox") {
-			// Generate .go file directly in src directory (not in subdirectory)
-			// This ensures proper package detection and compilation
-			genPath := strings.TrimSuffix(path, ".gox") + "_gox_gen.go"
+			genPath := generatedGoxPath(srcDir, path)
 			if err := transpileSingleGox(path, genPath); err != nil {
 				return fmt.Errorf("transpile %s: %w", path, err)
 			}
 		}
 		return nil
 	})
+}
+
+func generatedGoxPath(srcDir, srcPath string) string {
+	rel, err := filepath.Rel(srcDir, srcPath)
+	if err != nil {
+		base := strings.TrimSuffix(filepath.Base(srcPath), ".gox")
+		return filepath.Join(srcDir, ".goxgen", base+"_gox_gen.go")
+	}
+	flat := strings.TrimSuffix(filepath.ToSlash(rel), ".gox")
+	flat = strings.ReplaceAll(flat, "/", "_")
+	return filepath.Join(srcDir, ".goxgen", flat+"_gox_gen.go")
+}
+
+func legacyGeneratedGoxPath(srcPath string) string {
+	return strings.TrimSuffix(srcPath, ".gox") + "_gox_gen.go"
 }
 
 var tagRe = regexp.MustCompile(`(?s)<(/?)([A-Za-z][A-Za-z0-9]*)\s*([^>]*)>|([^<]+)`)
@@ -173,8 +186,18 @@ func transpileSingleGox(srcPath, genPath string) error {
 	// write file if changed
 	existing, _ := os.ReadFile(genPath)
 	if string(existing) != outBuilder.String() {
+		if err := os.MkdirAll(filepath.Dir(genPath), 0o755); err != nil {
+			return err
+		}
 		if err := os.WriteFile(genPath, []byte(outBuilder.String()), 0o644); err != nil {
 			return err
+		}
+	}
+
+	legacyPath := legacyGeneratedGoxPath(srcPath)
+	if legacyPath != genPath {
+		if _, err := os.Stat(legacyPath); err == nil {
+			_ = os.Remove(legacyPath)
 		}
 	}
 	return nil
