@@ -27,12 +27,17 @@ func Build(opts Options) error {
 	if err := os.MkdirAll(distDir, 0o755); err != nil {
 		return err
 	}
+	// transpile any .gox files into generated .go files before discovering sources
+	if err := TranspileGoxFiles(srcDir); err != nil {
+		return err
+	}
+
 	files, err := DiscoverFrontendFiles(srcDir)
 	if err != nil {
 		return err
 	}
 	if len(files) == 0 {
-		return fmt.Errorf("no frontend .go files found under %s", srcDir)
+		return fmt.Errorf("no frontend source files (.go or .gox) found under %s", srcDir)
 	}
 	stylesPresent, err := buildStyles(srcDir, publicDir, distDir)
 	if err != nil {
@@ -57,7 +62,7 @@ func DiscoverFrontendFiles(srcDir string) ([]string, error) {
 		if err != nil || info == nil || info.IsDir() {
 			return err
 		}
-		if strings.HasSuffix(path, ".go") {
+		if strings.HasSuffix(path, ".go") || strings.HasSuffix(path, "_gox_gen.go") {
 			files = append(files, path)
 		}
 		return nil
@@ -128,7 +133,7 @@ func resolveTailwindConfig(srcDir, publicDir string) (string, func(), error) {
 	if err != nil {
 		return "", nil, err
 	}
-	content := fmt.Sprintf("module.exports = {\n  content: [\n    './%s/**/*.go',\n    './%s/**/*.html',\n    './%s/**/*.html'\n  ],\n  theme: { extend: {} },\n  plugins: []\n};\n", filepath.ToSlash(filepath.Clean(srcDir)), filepath.ToSlash(filepath.Clean(srcDir)), filepath.ToSlash(filepath.Clean(publicDir)))
+	content := fmt.Sprintf("module.exports = {\n  content: [\n    './%s/**/*.go',\n    './%s/**/*.gox',\n    './%s/**/*.html',\n    './%s/**/*.html'\n  ],\n  theme: { extend: {} },\n  plugins: []\n};\n", filepath.ToSlash(filepath.Clean(srcDir)), filepath.ToSlash(filepath.Clean(srcDir)), filepath.ToSlash(filepath.Clean(srcDir)), filepath.ToSlash(filepath.Clean(publicDir)))
 	if _, err := file.WriteString(content); err != nil {
 		_ = file.Close()
 		_ = os.Remove(file.Name())
