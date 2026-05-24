@@ -1,6 +1,0 @@
-{
-  "name": "GoFront App",
-  "src": "src",
-  "public": "public",
-  "dist": "dist"
-}

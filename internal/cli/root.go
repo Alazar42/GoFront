@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 )
 
-const version = "0.1.0"
+const version = "0.0.2"
 
 func Execute(args []string) error {
 	if len(args) == 0 {

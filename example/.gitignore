@@ -1,5 +1,0 @@
-dist/
-*.wasm
-*.exe
-.idea/
-.vscode/
