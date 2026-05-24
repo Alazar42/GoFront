@@ -14,6 +14,35 @@ GoFront is a frontend framework that allows developers to build browser applicat
 - Tailwind CSS build stage
 - Modern browser support
 
+**New in v0.0.3**
+- **.gox files (React-like):** You can now author JSX-like files with the `.gox` extension. The scaffold produces `.gox` templates and the build pipeline transpiles them into Go component code automatically.
+- **Scaffold updates:** `gofront init` now generates `.gox` component and page templates and a `src/main.go` that mounts the generated app component.
+- **CLI bump:** The CLI reports version `0.0.3` (run `gofront version`).
+
+Example `.gox` snippet:
+
+```gox
+<Div class="app-root">
+    <Div id="counter">0</Div>
+    <Div>
+        <Button id="increment">Increment</Button>
+        <Button id="reset">Reset</Button>
+    </Div>
+</Div>
+```
+
+How it works:
+
+- Author `.gox` files in `src/` (components/pages). The compiler transpiles `.gox` -> generated Go (`*_gox_gen.go`) before building.
+- Build and dev commands are unchanged:
+
+```bash
+gofront dev
+gofront build
+```
+
+Tailwind config now includes `.gox` globs so utility classes inside `.gox` are detected during CSS generation.
+
 ## CLI Commands
 
 ```bash
