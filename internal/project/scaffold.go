@@ -92,7 +92,7 @@ func configFile() string {
 }
 
 func gitignoreFile() string {
-	return "dist/\n*.wasm\n*.exe\n.idea/\n.vscode/\n"
+	return "dist/\n*.wasm\n*.exe\n.idea/\n.vscode/\n*_gox_gen.go\n*.module.css\n"
 }
 
 func indexFile() string {
@@ -108,18 +108,78 @@ func tailwindConfigFile() string {
 }
 
 func appFile() string {
-	// .gox component template (JSX-like) for the main app
-	return "<Div class=\"app-root\">\n  <Div id=\"counter\" class=\"text-7xl font-black text-cyan-300\">0</Div>\n  <Div class=\"mt-4\">\n    <Button id=\"increment\">Increment</Button>\n    <Button id=\"reset\">Reset</Button>\n  </Div>\n</Div>\n"
+	// .gox component with script, styles, and template blocks (Svelte-like format)
+	// Script block contains Go code (variables, event handlers)
+	// Style block contains CSS (scoped to this component via .module.css)
+	// Template block contains JSX-like structure
+	return `<script>
+// Component state and event handlers go here
+// Example: var count = 0
+// Example: func increment() { count++ }
+</script>
+
+<style>
+.app-root {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+</style>
+
+<template>
+<Div class="app-root">
+  <Div id="counter" class="text-7xl font-black text-cyan-300">0</Div>
+  <Div class="mt-4">
+    <Button id="increment">Increment</Button>
+    <Button id="reset">Reset</Button>
+  </Div>
+</Div>
+</template>
+`
 }
 
 func componentFile() string {
-	// .gox component template
-	return "<Div class=\"gofront-card max-w-2xl p-8 text-center\">\n  <Text>Tailwind Counter</Text>\n</Div>\n"
+	// .gox component template with optional script, style, and template blocks
+	return `<style>
+.gofront-card {
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  padding: 1rem;
+  max-width: 50rem;
+  text-align: center;
+}
+</style>
+
+<template>
+<Div class="gofront-card">
+  <Text>Counter Component</Text>
+</Div>
+</template>
+`
 }
 
 func pageFile() string {
-	// .gox page template
-	return "<Div>\n  <Div class=\"mb-4 text-sm font-medium uppercase tracking-[0.35em] text-cyan-300/80\">GoFront Starter</Div>\n  <Div id=\"counter\" class=\"text-7xl font-black tracking-tight text-cyan-300\">0</Div>\n  <Div class=\"mt-4\">\n    <Button id=\"increment\">Increment</Button>\n    <Button id=\"reset\">Reset</Button>\n  </Div>\n</Div>\n"
+	// .gox page template (pages are automatically suffixed with "Page" in function name)
+	return `<style>
+.home-page {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+</style>
+
+<template>
+<Div class="home-page">
+  <Div class="mb-4 text-sm font-medium uppercase tracking-widest text-cyan-300/80">GoFront Starter</Div>
+  <Div id="counter" class="text-7xl font-black tracking-tight text-cyan-300">0</Div>
+  <Div class="mt-4">
+    <Button id="increment">Increment</Button>
+    <Button id="reset">Reset</Button>
+  </Div>
+</Div>
+</template>
+`
 }
 
 func mainGoFile() string {
