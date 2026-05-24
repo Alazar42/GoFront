@@ -266,7 +266,7 @@ func goRoot() (string, error) {
 }
 
 func defaultIndex() string {
-	return "<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n  <title>GoFront App</title>\n</head>\n<body>\n  <h1 id=\"counter\">0</h1>\n  <button id=\"increment\">Increment</button>\n  <script src=\"app.go\"></script>\n</body>\n</html>\n"
+	return "<!DOCTYPE html>\n<html>\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n  <title>GoFront App</title>\n</head>\n<body>\n  <div id=\"app\"></div>\n  <script src=\"gofront.js\"></script>\n</body>\n</html>\n"
 }
 
 func WriteBuildError(distDir, message string) error {
