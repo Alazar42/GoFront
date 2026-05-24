@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 )
 
@@ -54,6 +55,61 @@ func Build(opts Options) error {
 	}
 	_ = ClearBuildError(distDir)
 	return copyAssets(publicDir, distDir, stylesPresent)
+}
+
+// BuildDev performs an incremental rebuild using a previous and current snapshot.
+// It skips expensive work when only unrelated files changed.
+func BuildDev(opts Options, previous, current ProjectSnapshot) error {
+	srcDir := defaultDir(opts.SrcDir, "src")
+	publicDir := defaultDir(opts.PublicDir, "public")
+	distDir := defaultDir(opts.DistDir, "dist")
+
+	if err := os.MkdirAll(distDir, 0o755); err != nil {
+		return err
+	}
+
+	changedGo := previous.Go != current.Go
+	changedGox := previous.Gox != current.Gox
+	changedStyles := previous.Styles != current.Styles
+	changedPublic := previous.Public != current.Public
+
+	if changedGox {
+		if err := TranspileGoxFiles(srcDir); err != nil {
+			return err
+		}
+	}
+
+	if changedGo || changedGox {
+		if err := buildWasm(srcDir, distDir); err != nil {
+			return err
+		}
+		if err := writeLoader(distDir); err != nil {
+			return err
+		}
+	}
+
+	stylesPresent := activeStylesPresent(srcDir, publicDir)
+	if changedStyles {
+		built, err := buildStyles(srcDir, publicDir, distDir)
+		if err != nil {
+			return err
+		}
+		stylesPresent = built
+	}
+
+	if changedGo || changedGox || changedStyles || changedPublic {
+		if err := writeIndex(publicDir, distDir, stylesPresent); err != nil {
+			return err
+		}
+	}
+
+	if changedPublic || changedStyles {
+		if err := copyAssets(publicDir, distDir, stylesPresent); err != nil {
+			return err
+		}
+	}
+
+	return ClearBuildError(distDir)
 }
 
 func DiscoverFrontendFiles(srcDir string) ([]string, error) {
@@ -283,25 +339,73 @@ func copyAssets(publicDir, distDir string, skipStyles bool) error {
 	})
 }
 
-func SnapshotProject(srcDir, publicDir string) string {
+type ProjectSnapshot struct {
+	Go     string
+	Gox    string
+	Styles string
+	Public string
+}
+
+func SnapshotProject(srcDir, publicDir string) ProjectSnapshot {
+	return ProjectSnapshot{
+		Go: snapshotTree(srcDir, func(path string, info os.FileInfo) bool {
+			return strings.HasSuffix(path, ".go") && !strings.HasSuffix(path, "_gox_gen.go") && !strings.Contains(path, string(filepath.Separator)+".goxgen"+string(filepath.Separator))
+		}),
+		Gox:    snapshotTree(srcDir, func(path string, info os.FileInfo) bool { return strings.HasSuffix(path, ".gox") }),
+		Styles: snapshotStyles(srcDir, publicDir),
+		Public: snapshotTree(publicDir, func(path string, info os.FileInfo) bool {
+			return strings.HasSuffix(path, ".html") || !strings.HasSuffix(path, "styles.css")
+		}),
+	}
+}
+
+func activeStylesPresent(srcDir, publicDir string) bool {
+	if fileExists(filepath.Join(srcDir, "styles.css")) {
+		return true
+	}
+	return fileExists(filepath.Join(publicDir, "styles.css"))
+}
+
+func snapshotStyles(srcDir, publicDir string) string {
+	srcStyles := filepath.Join(srcDir, "styles.css")
+	publicStyles := filepath.Join(publicDir, "styles.css")
+	if fileExists(srcStyles) {
+		return snapshotFile(srcStyles)
+	}
+	if fileExists(publicStyles) {
+		return snapshotFile(publicStyles)
+	}
+	return ""
+}
+
+func snapshotFile(path string) string {
+	info, err := os.Stat(path)
+	if err != nil || info.IsDir() {
+		return ""
+	}
+	return path + ":" + info.ModTime().UTC().String() + ":" + strconv.FormatInt(info.Size(), 10)
+}
+
+func snapshotTree(root string, include func(path string, info os.FileInfo) bool) string {
 	var builder strings.Builder
-	_ = filepath.Walk(srcDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil || info == nil || info.IsDir() {
+	_ = filepath.Walk(root, func(path string, info os.FileInfo, err error) error {
+		if err != nil || info == nil {
 			return err
 		}
-		builder.WriteString(path)
-		builder.WriteString(":")
-		builder.WriteString(info.ModTime().UTC().String())
-		builder.WriteByte('\n')
-		return nil
-	})
-	_ = filepath.Walk(publicDir, func(path string, info os.FileInfo, err error) error {
-		if err != nil || info == nil || info.IsDir() {
-			return err
+		if info.IsDir() {
+			if filepath.Base(path) == ".goxgen" {
+				return filepath.SkipDir
+			}
+			return nil
+		}
+		if !include(path, info) {
+			return nil
 		}
 		builder.WriteString(path)
-		builder.WriteString(":")
+		builder.WriteByte(':')
 		builder.WriteString(info.ModTime().UTC().String())
+		builder.WriteByte(':')
+		builder.WriteString(strconv.FormatInt(info.Size(), 10))
 		builder.WriteByte('\n')
 		return nil
 	})

@@ -29,7 +29,7 @@ func runDev(args []string) error {
 	src := fs.String("src", "", "source directory")
 	public := fs.String("public", "", "public directory")
 	dist := fs.String("dist", "", "output directory")
-	pollMS := fs.Int("poll", 1000, "watch polling interval in milliseconds")
+	pollMS := fs.Int("poll", 300, "watch polling interval in milliseconds")
 	if err := fs.Parse(args); err != nil {
 		return err
 	}
@@ -47,8 +47,8 @@ func runDev(args []string) error {
 	if *dist != "" {
 		cfg.Dist = *dist
 	}
-	if *pollMS < 100 {
-		*pollMS = 100
+	if *pollMS < 50 {
+		*pollMS = 50
 	}
 
 	reload := server.NewReloadHub()
@@ -69,7 +69,7 @@ func watchProject(reload *server.ReloadHub, cfg config.ProjectConfig, interval t
 		if current == last {
 			continue
 		}
-		if err := compiler.Build(compiler.Options{Dev: true, ReloadHub: reload, SrcDir: cfg.Src, PublicDir: cfg.Public, DistDir: cfg.Dist}); err != nil {
+		if err := compiler.BuildDev(compiler.Options{Dev: true, ReloadHub: reload, SrcDir: cfg.Src, PublicDir: cfg.Public, DistDir: cfg.Dist}, last, current); err != nil {
 			_ = compiler.WriteBuildError(cfg.Dist, err.Error())
 			fmt.Fprintln(os.Stderr, err)
 			reload.Broadcast()
