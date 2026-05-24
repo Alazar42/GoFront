@@ -62,7 +62,7 @@ func moduleFile(root string, moduleName string) (string, error) {
 		// When no local gofront module is present, scaffold against the
 		// published module path and tag so generated apps can `go get` the
 		// released dependency. Update this tag when releasing newer versions.
-		builder.WriteString("\nrequire github.com/Alazar42/GoFront v0.0.1\n")
+		builder.WriteString("\nrequire github.com/Alazar42/GoFront v0.0.2\n")
 	}
 
 	return builder.String(), nil
