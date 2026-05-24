@@ -129,9 +129,39 @@ func appFile() string {
 	// Style block contains CSS (scoped to this component via .module.css)
 	// Template block contains JSX-like structure
 	return `<script>
-// Component state and event handlers go here
-// Example: var count = 0
-// Example: func increment() { count++ }
+import (
+	"strconv"
+	"sync"
+)
+
+var count = 0
+var bindOnce sync.Once
+
+func renderCount() {
+	_ = GoFront.SetText("#counter-value", strconv.Itoa(count))
+}
+
+func incrementCount() {
+	count++
+	renderCount()
+}
+
+func resetCount() {
+	count = 0
+	renderCount()
+}
+
+func init() {
+	bindOnce.Do(func() {
+		GoFront.RegisterEvent("#increment", "click", func() {
+			incrementCount()
+		})
+		GoFront.RegisterEvent("#reset", "click", func() {
+			resetCount()
+		})
+	})
+	renderCount()
+}
 </script>
 
 <style>
@@ -144,7 +174,7 @@ func appFile() string {
 
 <template>
 <Div class="app-root">
-  <Div id="counter" class="text-7xl font-black text-cyan-300">0</Div>
+  <Div id="counter-value" class="text-7xl font-black text-cyan-300">0</Div>
   <Div class="mt-4">
     <Button id="increment">Increment</Button>
     <Button id="reset">Reset</Button>

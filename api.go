@@ -9,6 +9,7 @@ import (
 	"github.com/Alazar42/GoFront/internal/lifecycle"
 	"github.com/Alazar42/GoFront/internal/router"
 	"github.com/Alazar42/GoFront/internal/state"
+	"github.com/Alazar42/GoFront/runtime"
 )
 
 type Response = browser.Response
@@ -60,6 +61,20 @@ func Attr(name, value string) Attribute { return component.Attr(name, value) }
 
 func Mount(selector string, view func() Component)  { component.Mount(selector, view) }
 func Render(selector string, view func() Component) { component.Render(selector, view) }
+
+func SetText(selector, text string) error      { return runtime.SetText(selector, text) }
+func SetHTML(selector, html string) error      { return runtime.SetHTML(selector, html) }
+func AddClass(selector, class string) error    { return runtime.AddClass(selector, class) }
+func RemoveClass(selector, class string) error { return runtime.RemoveClass(selector, class) }
+func ToggleClass(selector, class string) error { return runtime.ToggleClass(selector, class) }
+func GetValue(selector string) (string, error) { return runtime.GetValue(selector) }
+func SetValue(selector, value string) error    { return runtime.SetValue(selector, value) }
+func Hide(selector string) error               { return runtime.Hide(selector) }
+func Show(selector string) error               { return runtime.Show(selector) }
+func RegisterEvent(selector, event string, handler func()) {
+	runtime.RegisterEvent(selector, event, handler)
+}
+func RequestRender() { runtime.RequestRender() }
 
 func Route(path string, handler RouteHandler) { router.Route(path, handler) }
 func StartRouter(selector string)             { router.StartRouter(selector) }
