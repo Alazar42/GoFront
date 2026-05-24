@@ -14,15 +14,16 @@ func Scaffold(root string, moduleName string) error {
 		return err
 	}
 	files := map[string]string{
-		filepath.Join(root, "go.mod"):                          moduleContent,
-		filepath.Join(root, "src", "app.go"):                   appFile(),
-		filepath.Join(root, "src", "styles.css"):               stylesFile(),
-		filepath.Join(root, "src", "components", "counter.go"): componentFile(),
-		filepath.Join(root, "src", "pages", "home.go"):         pageFile(),
-		filepath.Join(root, "public", "index.html"):            indexFile(),
-		filepath.Join(root, "tailwind.config.js"):              tailwindConfigFile(),
-		filepath.Join(root, "gofront.config.json"):             configFile(),
-		filepath.Join(root, ".gitignore"):                      gitignoreFile(),
+		filepath.Join(root, "go.mod"):                           moduleContent,
+		filepath.Join(root, "src", "main.go"):                   mainGoFile(),
+		filepath.Join(root, "src", "app.gox"):                   appFile(),
+		filepath.Join(root, "src", "styles.css"):                stylesFile(),
+		filepath.Join(root, "src", "components", "counter.gox"): componentFile(),
+		filepath.Join(root, "src", "pages", "home.gox"):         pageFile(),
+		filepath.Join(root, "public", "index.html"):             indexFile(),
+		filepath.Join(root, "tailwind.config.js"):               tailwindConfigFile(),
+		filepath.Join(root, "gofront.config.json"):              configFile(),
+		filepath.Join(root, ".gitignore"):                       gitignoreFile(),
 	}
 	for path, content := range files {
 		if err := os.MkdirAll(filepath.Dir(path), 0o755); err != nil {
@@ -68,7 +69,7 @@ func moduleFile(root string, moduleName string) (string, error) {
 		// When no local gofront module is present, scaffold against the
 		// published module path and tag so generated apps can `go get` the
 		// released dependency. Update this tag when releasing newer versions.
-		builder.WriteString("\nrequire github.com/Alazar42/GoFront v0.0.2\n")
+		builder.WriteString("\nrequire github.com/Alazar42/GoFront v0.0.3\n")
 	}
 
 	return builder.String(), nil
@@ -107,15 +108,23 @@ func tailwindConfigFile() string {
 }
 
 func appFile() string {
-	return "package main\n\nimport GoFront \"github.com/Alazar42/GoFront\"\n\nfunc main() {\n\tGoFront.Run(func() {\n\t\tcount := GoFront.State(0)\n\n\t\tGoFront.Query(\"#increment\").OnClick(func() {\n\t\t\tcount.Set(count.Get() + 1)\n\t\t\tGoFront.Query(\"#counter\").SetText(count.Get())\n\t\t})\n\n\t\tGoFront.Query(\"#reset\").OnClick(func() {\n\t\t\tcount.Set(0)\n\t\t\tGoFront.Query(\"#counter\").SetText(count.Get())\n\t\t})\n\n\t\tGoFront.Query(\"body\").AddClass(\"gofront-ready\")\n\t})\n}\n"
+	// .gox component template (JSX-like) for the main app
+	return "<Div class=\"app-root\">\n  <Div id=\"counter\" class=\"text-7xl font-black text-cyan-300\">0</Div>\n  <Div class=\"mt-4\">\n    <Button id=\"increment\">Increment</Button>\n    <Button id=\"reset\">Reset</Button>\n  </Div>\n</Div>\n"
 }
 
 func componentFile() string {
-	return "package components\n\nimport GoFront \"github.com/Alazar42/GoFront\"\n\nfunc Counter() GoFront.Component {\n\treturn GoFront.Div(\n\t\tGoFront.Text(\"Tailwind Counter\"),\n\t).With(\n\t\tGoFront.Class(\"gofront-card max-w-2xl p-8 text-center\"),\n\t)\n}\n"
+	// .gox component template
+	return "<Div class=\"gofront-card max-w-2xl p-8 text-center\">\n  <Text>Tailwind Counter</Text>\n</Div>\n"
 }
 
 func pageFile() string {
-	return "package pages\n\nimport GoFront \"github.com/Alazar42/GoFront\"\n\nfunc HomePage() GoFront.Component {\n\treturn GoFront.Div(\n\t\tGoFront.Div(\n\t\t\tGoFront.Text(\"GoFront Counter\"),\n\t\t).With(\n\t\t\tGoFront.Class(\"mb-4 text-sm font-medium uppercase tracking-[0.35em] text-cyan-300/80\"),\n\t\t),\n\t\tGoFront.Div(\n\t\t\tGoFront.Text(\"0\"),\n\t\t).With(\n\t\t\tGoFront.ID(\"counter\"),\n\t\t\tGoFront.Class(\"text-7xl font-black tracking-tight text-cyan-300\"),\n\t\t),\n\t)\n}\n"
+	// .gox page template
+	return "<Div>\n  <Div class=\"mb-4 text-sm font-medium uppercase tracking-[0.35em] text-cyan-300/80\">GoFront Starter</Div>\n  <Div id=\"counter\" class=\"text-7xl font-black tracking-tight text-cyan-300\">0</Div>\n  <Div class=\"mt-4\">\n    <Button id=\"increment\">Increment</Button>\n    <Button id=\"reset\">Reset</Button>\n  </Div>\n</Div>\n"
+}
+
+func mainGoFile() string {
+	return "package main\n\nimport GoFront \"github.com/Alazar42/GoFront\"\n\nfunc main() {\n\tGoFront.Run(func() {\n\t\t// Mount the generated app component into body\n\t\tGoFront.Mount(\"body\", App)\n\t})\n}\n"
+
 }
 
 func runGoModDownload(root string) error {
