@@ -133,7 +133,59 @@ func resolveTailwindConfig(srcDir, publicDir string) (string, func(), error) {
 	if err != nil {
 		return "", nil, err
 	}
-	content := fmt.Sprintf("module.exports = {\n  content: [\n    './%s/**/*.go',\n    './%s/**/*.gox',\n    './%s/**/*.html',\n    './%s/**/*.html'\n  ],\n  theme: { extend: {} },\n  plugins: []\n};\n", filepath.ToSlash(filepath.Clean(srcDir)), filepath.ToSlash(filepath.Clean(srcDir)), filepath.ToSlash(filepath.Clean(srcDir)), filepath.ToSlash(filepath.Clean(publicDir)))
+	// Tailwind content patterns: match class names in Go source and generated HTML
+	// Pattern explanation:
+	// - src/**/*.{go,gox,html}: files to scan
+	// - extract: regex patterns to find class names in code
+	//   - "class=\\\"[^\\\"]*\\\"" matches HTML class attributes
+	//   - GoFront\\.Class\\(\\\"[^\\\"]*\\\" matches GoFront.Class() calls
+	//   - on:[a-z]*=\\{[^}]*\\} matches on:event={handler} attributes
+	content := fmt.Sprintf(`module.exports = {
+  content: [
+    './%s/**/*.{go,gox,html}',
+    './%s/**/*.{go,gox,html}',
+    './%s/**/*.{go,gox,html}'
+  ],
+  safelist: [
+    { pattern: /bg-(gradient|slate|cyan|red).*/ },
+    { pattern: /text-(slate|cyan|4xl|5xl|6xl|7xl|center|slate-950).*/ },
+    { pattern: /hover:.*/ },
+    { pattern: /active:.*/ },
+    { pattern: /flex.*/ },
+    { pattern: /gap-.*/ },
+    { pattern: /px-.*/ },
+    { pattern: /py-.*/ },
+    { pattern: /rounded-.*/ },
+    { pattern: /transition.*/ },
+    { pattern: /transform.*/ },
+    { pattern: /scale-.*/ },
+    { pattern: /border.*/ },
+    { pattern: /shadow.*/ },
+    { pattern: /backdrop-.*/ },
+    { pattern: /min-h-.*/ },
+    { pattern: /max-w-.*/ },
+    { pattern: /mx-auto/ },
+    { pattern: /space-y-.*/ },
+    { pattern: /mb-.*/ },
+    { pattern: /mt-.*/ },
+    { pattern: /p-.*/ },
+    { pattern: /bg-clip-text/ },
+    { pattern: /bg-white.*/ },
+    { pattern: /font-.*/ },
+    { pattern: /uppercase/ },
+    { pattern: /tracking-.*/ },
+    { pattern: /from-.*/ },
+    { pattern: /to-.*/ },
+    { pattern: /via-.*/ },
+    { pattern: /h-screen/ },
+    { pattern: /justify-.*/ },
+    { pattern: /items-.*/ },
+    { pattern: /divide-.*/ }
+  ],
+  theme: { extend: {} },
+  plugins: []
+};
+`, filepath.ToSlash(filepath.Clean(srcDir)), filepath.ToSlash(filepath.Clean(srcDir)), filepath.ToSlash(filepath.Clean(publicDir)))
 	if _, err := file.WriteString(content); err != nil {
 		_ = file.Close()
 		_ = os.Remove(file.Name())

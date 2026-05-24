@@ -122,7 +122,61 @@ func stylesFile() string {
 }
 
 func tailwindConfigFile() string {
-	return "module.exports = {\n  content: [\n    './src/**/*.go',\n    './src/**/*.html',\n    './public/**/*.html'\n  ],\n  theme: {\n    extend: {}\n  },\n  plugins: []\n};\n"
+	return `module.exports = {
+  content: [
+    './src/**/*.{go,gox,html}',
+    './public/**/*.html'
+  ],
+  // Safelist: explicitly include classes that may not be detected by content scanner
+  // This ensures Tailwind classes used in GoFront.Class() calls are always generated
+  safelist: [
+    { pattern: /^bg-(slate|cyan|red).*/ },
+    { pattern: /^text-(slate|cyan).*/ },
+    { pattern: /^hover:(bg|text).*/ },
+    { pattern: /^active:(scale|bg).*/ },
+    { pattern: /^px-.*/ },
+    { pattern: /^py-.*/ },
+    { pattern: /^p-.*/ },
+    { pattern: /^m.?-.*/ },
+    { pattern: /^rounded-.*/ },
+    { pattern: /^shadow-.*/ },
+    { pattern: /^border-.*/ },
+    { pattern: /^flex.*/ },
+    { pattern: /^gap-.*/ },
+    { pattern: /^justify-.*/ },
+    { pattern: /^items-.*/ },
+    { pattern: /^flex-.*/ },
+    { pattern: /^grid-.*/ },
+    { pattern: /^h-.*/ },
+    { pattern: /^w-.*/ },
+    { pattern: /^max-w-.*/ },
+    { pattern: /^min-h-.*/ },
+    { pattern: /^font-.*/ },
+    { pattern: /^text-.*/ },
+    { pattern: /^leading-.*/ },
+    { pattern: /^tracking-.*/ },
+    { pattern: /^uppercase/ },
+    { pattern: /^transition.*/ },
+    { pattern: /^transform.*/ },
+    { pattern: /^scale-.*/ },
+    { pattern: /^from-.*/ },
+    { pattern: /^to-.*/ },
+    { pattern: /^via-.*/ },
+    { pattern: /^bg-gradient.*/ },
+    { pattern: /^bg-clip-.*/ },
+    { pattern: /^space-.*/ },
+    { pattern: /^divide-.*/ },
+    { pattern: /^overflow-.*/ },
+    { pattern: /^whitespace-.*/ },
+    { pattern: /^antialiased/ },
+    { pattern: /^backdrop-.*/ }
+  ],
+  theme: {
+    extend: {}
+  },
+  plugins: []
+};
+`
 }
 
 func appFile() string {
