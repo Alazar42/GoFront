@@ -34,17 +34,21 @@ func Build(opts Options) error {
 	if len(files) == 0 {
 		return fmt.Errorf("no frontend .go files found under %s", srcDir)
 	}
+	stylesPresent, err := buildStyles(srcDir, publicDir, distDir)
+	if err != nil {
+		return err
+	}
 	if err := buildWasm(srcDir, distDir); err != nil {
 		return err
 	}
 	if err := writeLoader(distDir); err != nil {
 		return err
 	}
-	if err := writeIndex(publicDir, distDir); err != nil {
+	if err := writeIndex(publicDir, distDir, stylesPresent); err != nil {
 		return err
 	}
 	_ = ClearBuildError(distDir)
-	return copyAssets(publicDir, distDir)
+	return copyAssets(publicDir, distDir, stylesPresent)
 }
 
 func DiscoverFrontendFiles(srcDir string) ([]string, error) {
@@ -75,6 +79,78 @@ func buildWasm(srcDir, distDir string) error {
 	return nil
 }
 
+func buildStyles(srcDir, publicDir, distDir string) (bool, error) {
+	srcStyles := filepath.Join(srcDir, "styles.css")
+	publicStyles := filepath.Join(publicDir, "styles.css")
+	outputStyles := filepath.Join(distDir, "styles.css")
+
+	if fileExists(srcStyles) {
+		return true, compileTailwindCSS(srcStyles, outputStyles, srcDir, publicDir)
+	}
+
+	if fileExists(publicStyles) {
+		return true, copyFile(publicStyles, outputStyles)
+	}
+
+	return false, nil
+}
+
+func compileTailwindCSS(inputPath, outputPath, srcDir, publicDir string) error {
+	configPath, cleanup, err := resolveTailwindConfig(srcDir, publicDir)
+	if err != nil {
+		return err
+	}
+	if cleanup != nil {
+		defer cleanup()
+	}
+
+	commandName, commandArgs, err := tailwindCommand(inputPath, outputPath, configPath)
+	if err != nil {
+		return err
+	}
+	cmd := exec.Command(commandName, commandArgs...)
+	cmd.Env = append(os.Environ(), "NODE_ENV=production")
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("build styles: %w\n%s", err, strings.TrimSpace(string(output)))
+	}
+	return nil
+}
+
+func resolveTailwindConfig(srcDir, publicDir string) (string, func(), error) {
+	for _, candidate := range []string{"tailwind.config.js", "tailwind.config.cjs", "tailwind.config.mjs"} {
+		if fileExists(candidate) {
+			return candidate, nil, nil
+		}
+	}
+
+	file, err := os.CreateTemp(".", ".gofront-tailwind-*.cjs")
+	if err != nil {
+		return "", nil, err
+	}
+	content := fmt.Sprintf("module.exports = {\n  content: [\n    './%s/**/*.go',\n    './%s/**/*.html',\n    './%s/**/*.html'\n  ],\n  theme: { extend: {} },\n  plugins: []\n};\n", filepath.ToSlash(filepath.Clean(srcDir)), filepath.ToSlash(filepath.Clean(srcDir)), filepath.ToSlash(filepath.Clean(publicDir)))
+	if _, err := file.WriteString(content); err != nil {
+		_ = file.Close()
+		_ = os.Remove(file.Name())
+		return "", nil, err
+	}
+	if err := file.Close(); err != nil {
+		_ = os.Remove(file.Name())
+		return "", nil, err
+	}
+	return file.Name(), func() { _ = os.Remove(file.Name()) }, nil
+}
+
+func tailwindCommand(inputPath, outputPath, configPath string) (string, []string, error) {
+	if tailwindPath, err := exec.LookPath("tailwindcss"); err == nil {
+		return tailwindPath, []string{"-i", inputPath, "-o", outputPath, "--minify", "--config", configPath}, nil
+	}
+	if npxPath, err := exec.LookPath("npx"); err == nil {
+		return npxPath, []string{"--yes", "tailwindcss@3.4.17", "-i", inputPath, "-o", outputPath, "--minify", "--config", configPath}, nil
+	}
+	return "", nil, fmt.Errorf("tailwindcss not found. install tailwindcss or npm/npx to build src/styles.css")
+}
+
 func writeLoader(distDir string) error {
 	goRoot, err := goRoot()
 	if err != nil {
@@ -98,30 +174,38 @@ func writeLoader(distDir string) error {
 	return os.WriteFile(filepath.Join(distDir, "gofront.js"), append(content, []byte(bootstrap)...), 0o644)
 }
 
-func writeIndex(publicDir, distDir string) error {
+func writeIndex(publicDir, distDir string, stylesPresent bool) error {
 	input := []byte(defaultIndex())
 	if source, err := os.ReadFile(filepath.Join(publicDir, "index.html")); err == nil {
 		input = source
+	}
+	if stylesPresent {
+		input = ensureStylesheetLink(input)
 	}
 	output := bytes.ReplaceAll(input, []byte(`<script src="app.go"></script>`), []byte(`<script src="gofront.js"></script>`))
 	if !bytes.Contains(output, []byte("gofront.js")) {
 		output = append(output, []byte("\n<script src=\"gofront.js\"></script>\n")...)
 	}
+	if stylesPresent {
+		output = ensureStylesheetLink(output)
+	}
 	return os.WriteFile(filepath.Join(distDir, "index.html"), output, 0o644)
 }
 
-func copyAssets(publicDir, distDir string) error {
-	src := filepath.Join(publicDir, "assets")
-	if _, err := os.Stat(src); err != nil {
-		return nil
-	}
-	return filepath.Walk(src, func(path string, info os.FileInfo, err error) error {
+func copyAssets(publicDir, distDir string, skipStyles bool) error {
+	return filepath.Walk(publicDir, func(path string, info os.FileInfo, err error) error {
 		if err != nil || info == nil || info.IsDir() {
 			return err
 		}
 		rel, err := filepath.Rel(publicDir, path)
 		if err != nil {
 			return err
+		}
+		if rel == "index.html" {
+			return nil
+		}
+		if skipStyles && rel == "styles.css" {
+			return nil
 		}
 		dst := filepath.Join(distDir, rel)
 		if err := os.MkdirAll(filepath.Dir(dst), 0o755); err != nil {
@@ -192,6 +276,47 @@ func ClearBuildError(distDir string) error {
 		return err
 	}
 	return nil
+}
+
+func ensureStylesheetLink(input []byte) []byte {
+	linkTag := []byte(`<link rel="stylesheet" href="styles.css">`)
+	if bytes.Contains(input, linkTag) {
+		return input
+	}
+	closingHead := []byte("</head>")
+	if idx := bytes.Index(input, closingHead); idx >= 0 {
+		result := make([]byte, 0, len(input)+len(linkTag)+1)
+		result = append(result, input[:idx]...)
+		result = append(result, []byte("  ")...)
+		result = append(result, linkTag...)
+		result = append(result, byte('\n'))
+		result = append(result, input[idx:]...)
+		return result
+	}
+	return append([]byte(string(linkTag)+"\n"), input...)
+}
+
+func fileExists(path string) bool {
+	info, err := os.Stat(path)
+	return err == nil && !info.IsDir()
+}
+
+func copyFile(srcPath, dstPath string) error {
+	if err := os.MkdirAll(filepath.Dir(dstPath), 0o755); err != nil {
+		return err
+	}
+	in, err := os.Open(srcPath)
+	if err != nil {
+		return err
+	}
+	defer in.Close()
+	out, err := os.Create(dstPath)
+	if err != nil {
+		return err
+	}
+	defer out.Close()
+	_, err = io.Copy(out, in)
+	return err
 }
 
 func defaultDir(value, fallback string) string {

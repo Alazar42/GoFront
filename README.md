@@ -11,6 +11,7 @@ GoFront is a frontend framework that allows developers to build browser applicat
 - Component system
 - Routing
 - Hot reload
+- Tailwind CSS build stage
 - Modern browser support
 
 ## CLI Commands
@@ -72,17 +73,21 @@ gofront version
 gofront init my-app
 ```
 
+The generated starter is a Tailwind-powered counter page with a polished card layout, increment and reset actions, and ready-to-edit source files.
+
 Project structure:
 
 ```text
 my-app/
 ├── src/
 │   ├── app.go
+│   ├── styles.css
 │   ├── components/
 │   └── pages/
 ├── public/
 │   └── index.html
 ├── dist/
+├── tailwind.config.js
 └── gofront.config.json
 ```
 
@@ -123,9 +128,58 @@ Create `public/index.html`:
 </html>
 ```
 
+## Tailwind CSS
+
+GoFront automatically builds Tailwind when it finds `src/styles.css`.
+
+Default files:
+
+- `src/styles.css`
+- `tailwind.config.js`
+
+The build pipeline will generate `dist/styles.css` and link it into the built HTML.
+
+Example `src/styles.css`:
+
+```css
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    html {
+        @apply bg-slate-950 text-slate-100 antialiased;
+    }
+
+    body {
+        @apply min-h-screen;
+    }
+}
+```
+
+Example `tailwind.config.js`:
+
+```js
+module.exports = {
+    content: [
+        './src/**/*.go',
+        './src/**/*.html',
+        './public/**/*.html'
+    ],
+    theme: {
+        extend: {}
+    },
+    plugins: []
+}
+```
+
+GoFront looks for `tailwindcss` first, then uses `npx tailwindcss@3.4.17` if the local binary is not installed.
+
 ## Writing Go Frontend Code
 
 Create `src/app.go`:
+
+`main` inside `src/app.go` is the application entrypoint and is responsible for running your app.
 
 ```go
 package main
@@ -133,16 +187,16 @@ package main
 import "gofront"
 
 func main() {
-    count := gofront.State(0)
+    gofront.Run(func() {
+        count := gofront.State(0)
 
-    button := gofront.Query("#increment")
+        button := gofront.Query("#increment")
 
-    button.OnClick(func() {
-        count.Set(count.Get() + 1)
-        gofront.Query("#counter").SetText(count.Get())
+        button.OnClick(func() {
+            count.Set(count.Get() + 1)
+            gofront.Query("#counter").SetText(count.Get())
+        })
     })
-
-    gofront.Wait()
 }
 ```
 
@@ -209,7 +263,8 @@ gofront serve
 
 ## Notes
 
-- In browser apps, call `gofront.Wait()` in `main()` to keep WebAssembly runtime alive.
+- Use `gofront.Run(func() { ... })` as your app entrypoint. It keeps the WebAssembly runtime alive automatically.
+- `gofront.Wait()` is still available for advanced/manual lifecycle control.
 - If your browser logs `lockdown-install.js` SES warnings, that is typically from an extension, not GoFront.
 
 ## Routing
