@@ -9,13 +9,17 @@ import (
 )
 
 func Scaffold(root string, moduleName string) error {
-	moduleContent, err := moduleFile(root, moduleName)
+	resolvedModuleName, err := resolveModuleName(root, moduleName)
+	if err != nil {
+		return err
+	}
+	moduleContent, err := moduleFile(root, resolvedModuleName)
 	if err != nil {
 		return err
 	}
 	files := map[string]string{
 		filepath.Join(root, "go.mod"):                           moduleContent,
-		filepath.Join(root, "src", "main.go"):                   mainGoFile(),
+		filepath.Join(root, "src", "main.go"):                   mainGoFile(resolvedModuleName),
 		filepath.Join(root, "src", "app.gox"):                   appFile(),
 		filepath.Join(root, "src", "styles.css"):                stylesFile(),
 		filepath.Join(root, "src", "components", "counter.gox"): componentFile(),
@@ -34,14 +38,14 @@ func Scaffold(root string, moduleName string) error {
 		}
 	}
 
-	// Run go mod download to generate go.sum
-	if err := runGoModDownload(root); err != nil {
-		return fmt.Errorf("failed to download modules: %w", err)
+	// Run go mod tidy to generate a complete go.sum for the scaffolded project.
+	if err := runGoModTidy(root); err != nil {
+		return fmt.Errorf("failed to tidy modules: %w", err)
 	}
 	return nil
 }
 
-func moduleFile(root string, moduleName string) (string, error) {
+func resolveModuleName(root string, moduleName string) (string, error) {
 	absRoot, err := filepath.Abs(root)
 	if err != nil {
 		return "", err
@@ -52,6 +56,18 @@ func moduleFile(root string, moduleName string) (string, error) {
 	}
 	if moduleName == "" || moduleName == "." {
 		moduleName = "gofront-app"
+	}
+	return moduleName, nil
+}
+
+func moduleFile(root string, moduleName string) (string, error) {
+	absRoot, err := filepath.Abs(root)
+	if err != nil {
+		return "", err
+	}
+	moduleName, err = resolveModuleName(absRoot, moduleName)
+	if err != nil {
+		return "", err
 	}
 	var builder strings.Builder
 	builder.WriteString(fmt.Sprintf("module %s\n\ngo 1.24\n", moduleName))
@@ -182,13 +198,17 @@ func pageFile() string {
 `
 }
 
-func mainGoFile() string {
-	return "package main\n\nimport GoFront \"github.com/Alazar42/GoFront\"\n\nfunc main() {\n\tGoFront.Run(func() {\n\t\t// Mount the generated app component into body\n\t\tGoFront.Mount(\"body\", App)\n\t})\n}\n"
+func mainGoFile(moduleName string) string {
+	moduleName = sanitizeModuleName(moduleName)
+	if moduleName == "" {
+		moduleName = "gofront-app"
+	}
+	return fmt.Sprintf("package main\n\nimport (\n\tGoFront \"github.com/Alazar42/GoFront\"\n\tappgen \"%s/src/.goxgen\"\n)\n\nfunc main() {\n\tGoFront.Run(func() {\n\t\t// Mount the generated app component into body\n\t\tGoFront.Mount(\"body\", appgen.App)\n\t})\n}\n", moduleName)
 
 }
 
-func runGoModDownload(root string) error {
-	cmd := exec.Command("go", "mod", "download")
+func runGoModTidy(root string) error {
+	cmd := exec.Command("go", "mod", "tidy")
 	cmd.Dir = root
 	return cmd.Run()
 }
