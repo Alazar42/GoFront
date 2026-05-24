@@ -29,5 +29,6 @@ func runInit(args []string) error {
 	if len(remaining) == 1 && remaining[0] != "" {
 		target = remaining[0]
 	}
-	return project.Scaffold(target)
+	moduleName := target
+	return project.Scaffold(target, moduleName)
 }

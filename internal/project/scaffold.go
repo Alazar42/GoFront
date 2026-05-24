@@ -7,8 +7,8 @@ import (
 	"strings"
 )
 
-func Scaffold(root string) error {
-	moduleContent, err := moduleFile(root)
+func Scaffold(root string, moduleName string) error {
+	moduleContent, err := moduleFile(root, moduleName)
 	if err != nil {
 		return err
 	}
@@ -34,12 +34,15 @@ func Scaffold(root string) error {
 	return nil
 }
 
-func moduleFile(root string) (string, error) {
+func moduleFile(root string, moduleName string) (string, error) {
 	absRoot, err := filepath.Abs(root)
 	if err != nil {
 		return "", err
 	}
-	moduleName := sanitizeModuleName(filepath.Base(absRoot))
+	moduleName = sanitizeModuleName(moduleName)
+	if moduleName == "" {
+		moduleName = sanitizeModuleName(filepath.Base(absRoot))
+	}
 	if moduleName == "" || moduleName == "." {
 		moduleName = "gofront-app"
 	}
