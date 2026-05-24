@@ -42,7 +42,7 @@ func legacyGeneratedGoxPath(srcPath string) string {
 }
 
 var tagRe = regexp.MustCompile(`(?s)<(/?)([A-Za-z][A-Za-z0-9]*)\s*([^>]*)>|([^<]+)`)
-var attrRe = regexp.MustCompile(`([a-zA-Z_:][-a-zA-Z0-9_:.]*)\s*=\s*"([^"]*)"`)
+var attrRe = regexp.MustCompile(`([a-zA-Z_:][-a-zA-Z0-9_:.]*)\s*=\s*(?:"([^"]*)"|\{([^}]*)\})`)
 
 type GoxBlocks struct {
 	Script   string
@@ -166,10 +166,22 @@ func transpileSingleGox(srcPath, genPath string) error {
 	outBuilder.WriteString(fmt.Sprintf("func %s() GoFront.Component {\n", funcName))
 
 	// Build component expression from tokens in template
-	templateComponent := transpileTemplate(blocks.Template)
-	outBuilder.WriteString("\treturn ")
-	outBuilder.WriteString(templateComponent)
-	outBuilder.WriteString("\n}")
+	templateComponent, events := transpileTemplate(blocks.Template)
+	if len(events) == 0 {
+		outBuilder.WriteString("\treturn ")
+		outBuilder.WriteString(templateComponent)
+		outBuilder.WriteString("\n}")
+	} else {
+		outBuilder.WriteString("\tel := ")
+		outBuilder.WriteString(templateComponent)
+		outBuilder.WriteString("\n")
+		for _, ev := range events {
+			outBuilder.WriteString("\t")
+			outBuilder.WriteString(ev)
+			outBuilder.WriteString("\n")
+		}
+		outBuilder.WriteString("\treturn el\n}")
+	}
 
 	// Generate style file if styles are present
 	if blocks.Style != "" {
@@ -204,12 +216,13 @@ type goxNode struct {
 	tag      string
 	text     string
 	attrs    []string
+	events   []string
 	children []goxNode
 	isText   bool
 }
 
 // transpileTemplate converts JSX-like template to GoFront component code.
-func transpileTemplate(template string) string {
+func transpileTemplate(template string) (string, []string) {
 	tokens := tagRe.FindAllStringSubmatch(template, -1)
 	index := 0
 
@@ -239,7 +252,8 @@ func transpileTemplate(template string) string {
 				continue
 			}
 
-			node := goxNode{tag: tag, attrs: parseGoxAttrs(attrs)}
+			a, e := parseGoxAttrs(attrs)
+			node := goxNode{tag: tag, attrs: a, events: e}
 			node.children = parse(tag)
 			nodes = append(nodes, node)
 		}
@@ -248,36 +262,89 @@ func transpileTemplate(template string) string {
 
 	nodes := parse("")
 	if len(nodes) == 0 {
-		return "GoFront.Div()"
+		return "GoFront.Div()", nil
 	}
 	if len(nodes) == 1 {
-		return renderGoxNode(nodes[0])
+		expr := renderGoxNode(nodes[0])
+		var evs []string
+		collectNodeEvents(nodes[0], &evs)
+		return expr, evs
 	}
 	children := make([]string, 0, len(nodes))
 	for _, node := range nodes {
 		children = append(children, renderGoxNode(node))
 	}
-	return "GoFront.Div(" + strings.Join(children, ", ") + ")"
+	expr := "GoFront.Div(" + strings.Join(children, ", ") + ")"
+	var evs []string
+	for _, node := range nodes {
+		collectNodeEvents(node, &evs)
+	}
+	return expr, evs
 }
 
-func parseGoxAttrs(attrs string) []string {
+func collectNodeEvents(node goxNode, evs *[]string) {
+	for _, ev := range node.events {
+		*evs = append(*evs, ev)
+	}
+	for _, ch := range node.children {
+		collectNodeEvents(ch, evs)
+	}
+}
+
+func parseGoxAttrs(attrs string) ([]string, []string) {
 	if attrs == "" {
-		return nil
+		return nil, nil
 	}
 	var out []string
+	var events []string
 	for _, m := range attrRe.FindAllStringSubmatch(attrs, -1) {
 		name := strings.ToLower(m[1])
-		val := m[2]
+		val := ""
+		if m[2] != "" {
+			val = m[2]
+		} else if m[3] != "" {
+			val = m[3]
+		}
 		switch name {
 		case "id":
 			out = append(out, fmt.Sprintf("GoFront.ID(%q)", val))
 		case "class":
 			out = append(out, fmt.Sprintf("GoFront.Class(%q)", val))
 		default:
-			out = append(out, fmt.Sprintf("GoFront.Attr(%q, %q)", name, val))
+			// support on:click={handler} style event sugar
+			if strings.HasPrefix(name, "on:") {
+				eventName := strings.TrimPrefix(name, "on:")
+				handler := strings.TrimSpace(val)
+				if handler == "" {
+					continue
+				}
+				// ensure the element has an id; create a deterministic id from event+handler
+				genID := fmt.Sprintf("gox-%s-%s", eventName, sanitizeID(handler))
+				out = append(out, fmt.Sprintf("GoFront.ID(%q)", genID))
+				// RegisterEvent on the generated id. We emit these as statements at function level.
+				events = append(events, fmt.Sprintf("GoFront.RegisterEvent(%q, %q, %s)", "#"+genID, eventName, handler))
+			} else {
+				out = append(out, fmt.Sprintf("GoFront.Attr(%q, %q)", name, val))
+			}
 		}
 	}
-	return out
+	return out, events
+}
+
+func sanitizeID(s string) string {
+	var b strings.Builder
+	for _, r := range s {
+		if (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z') || (r >= '0' && r <= '9') || r == '_' {
+			b.WriteRune(r)
+		} else {
+			b.WriteByte('_')
+		}
+	}
+	res := b.String()
+	if res == "" {
+		return "gox"
+	}
+	return res
 }
 
 func renderGoxNode(node goxNode) string {
