@@ -107,19 +107,19 @@ func tailwindConfigFile() string {
 }
 
 func appFile() string {
-	return "package main\n\nimport \"github.com/Alazar42/GoFront\"\n\nfunc main() {\n\tGoFront.Run(func() {\n\t\tcount := GoFront.State(0)\n\n\t\tGoFront.Query(\"#increment\").OnClick(func() {\n\t\t\tcount.Set(count.Get() + 1)\n\t\t\tGoFront.Query(\"#counter\").SetText(count.Get())\n\t\t})\n\n\t\tGoFront.Query(\"#reset\").OnClick(func() {\n\t\t\tcount.Set(0)\n\t\t\tGoFront.Query(\"#counter\").SetText(count.Get())\n\t\t})\n\n\t\tGoFront.Query(\"body\").AddClass(\"gofront-ready\")\n\t})\n}\n"
+	return "package main\n\nimport GoFront \"github.com/Alazar42/GoFront\"\n\nfunc main() {\n\tGoFront.Run(func() {\n\t\tcount := GoFront.State(0)\n\n\t\tGoFront.Query(\"#increment\").OnClick(func() {\n\t\t\tcount.Set(count.Get() + 1)\n\t\t\tGoFront.Query(\"#counter\").SetText(count.Get())\n\t\t})\n\n\t\tGoFront.Query(\"#reset\").OnClick(func() {\n\t\t\tcount.Set(0)\n\t\t\tGoFront.Query(\"#counter\").SetText(count.Get())\n\t\t})\n\n\t\tGoFront.Query(\"body\").AddClass(\"gofront-ready\")\n\t})\n}\n"
 }
 
 func componentFile() string {
-	return "package components\n\nimport \"github.com/Alazar42/GoFront\"\n\nfunc Counter() GoFront.Component {\n\treturn GoFront.Div(\n\t\tGoFront.Text(\"Tailwind Counter\"),\n\t).With(\n\t\tGoFront.Class(\"gofront-card max-w-2xl p-8 text-center\"),\n\t)\n}\n"
+	return "package components\n\nimport GoFront \"github.com/Alazar42/GoFront\"\n\nfunc Counter() GoFront.Component {\n\treturn GoFront.Div(\n\t\tGoFront.Text(\"Tailwind Counter\"),\n\t).With(\n\t\tGoFront.Class(\"gofront-card max-w-2xl p-8 text-center\"),\n\t)\n}\n"
 }
 
 func pageFile() string {
-	return "package pages\n\nimport \"github.com/Alazar42/GoFront\"\n\nfunc HomePage() GoFront.Component {\n\treturn GoFront.Div(\n\t\tGoFront.Div(\n\t\t\tGoFront.Text(\"GoFront Counter\"),\n\t\t).With(\n\t\t\tGoFront.Class(\"mb-4 text-sm font-medium uppercase tracking-[0.35em] text-cyan-300/80\"),\n\t\t),\n\t\tGoFront.Div(\n\t\t\tGoFront.Text(\"0\"),\n\t\t).With(\n\t\t\tGoFront.ID(\"counter\"),\n\t\t\tGoFront.Class(\"text-7xl font-black tracking-tight text-cyan-300\"),\n\t\t),\n\t)\n}\n"
+	return "package pages\n\nimport GoFront \"github.com/Alazar42/GoFront\"\n\nfunc HomePage() GoFront.Component {\n\treturn GoFront.Div(\n\t\tGoFront.Div(\n\t\t\tGoFront.Text(\"GoFront Counter\"),\n\t\t).With(\n\t\t\tGoFront.Class(\"mb-4 text-sm font-medium uppercase tracking-[0.35em] text-cyan-300/80\"),\n\t\t),\n\t\tGoFront.Div(\n\t\t\tGoFront.Text(\"0\"),\n\t\t).With(\n\t\t\tGoFront.ID(\"counter\"),\n\t\t\tGoFront.Class(\"text-7xl font-black tracking-tight text-cyan-300\"),\n\t\t),\n\t)\n}\n"
 }
 
 func runGoModDownload(root string) error {
-cmd := exec.Command("go", "mod", "download")
-cmd.Dir = root
-return cmd.Run()
+	cmd := exec.Command("go", "mod", "download")
+	cmd.Dir = root
+	return cmd.Run()
 }
