@@ -1,4 +1,4 @@
-package gofront
+package state
 
 import (
 	"sync"

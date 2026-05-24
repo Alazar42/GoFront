@@ -1,6 +1,6 @@
 //go:build !js || !wasm
 
-package gofront
+package lifecycle
 
 // Run executes app setup on non-wasm targets without blocking.
 func Run(setup func()) {

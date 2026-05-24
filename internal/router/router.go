@@ -1,22 +1,25 @@
-package gofront
+package router
 
-import "gofront/runtime"
+import (
+	"gofront/internal/component"
+	"gofront/runtime"
+)
 
-type RouteHandler func() Component
+type RouteHandler func() component.Component
 
 var routes = map[string]RouteHandler{}
 
 func Route(path string, handler RouteHandler) { routes[path] = handler }
 
 func StartRouter(selector string) {
-	Mount(selector, func() Component {
+	component.Mount(selector, func() component.Component {
 		if handler, ok := routes[runtime.CurrentPath()]; ok {
 			return handler()
 		}
 		if handler, ok := routes["*"]; ok {
 			return handler()
 		}
-		return Div(Text("Not Found"))
+		return component.Div(component.Text("Not Found"))
 	})
 	runtime.SetPathCallback(func() { runtime.RequestRender() })
 }

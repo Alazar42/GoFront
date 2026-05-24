@@ -1,4 +1,4 @@
-package gofront
+package element
 
 import (
 	"fmt"

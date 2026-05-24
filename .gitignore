@@ -1,0 +1,22 @@
+# Go build outputs
+bin/
+*.exe
+*.dll
+*.so
+*.dylib
+*.wasm
+
+# GoFront generated artifacts
+dist/
+example/dist/
+example/gofront
+
+# Dependency caches / tooling
+node_modules/
+.npm/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

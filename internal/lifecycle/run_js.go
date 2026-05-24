@@ -1,6 +1,6 @@
 //go:build js && wasm
 
-package gofront
+package lifecycle
 
 // Run executes app setup and keeps the wasm runtime alive.
 func Run(setup func()) {

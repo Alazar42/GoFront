@@ -1,6 +1,6 @@
 //go:build !js || !wasm
 
-package gofront
+package browser
 
 import (
 	"io"

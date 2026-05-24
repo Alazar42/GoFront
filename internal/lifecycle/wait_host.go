@@ -1,6 +1,6 @@
 //go:build !js || !wasm
 
-package gofront
+package lifecycle
 
 // Wait is a no-op on non-wasm targets.
 func Wait() {}

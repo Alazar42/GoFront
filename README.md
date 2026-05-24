@@ -106,6 +106,13 @@ GoFront reads `gofront.config.json` by default:
 
 You can override path values with CLI flags.
 
+## Scaffold & Module
+
+`gofront init <module-name>` writes a scaffolded app whose `go.mod` module name equals the provided `<module-name>`.
+When `init` is run from inside the GoFront repository (useful during local development of the framework), the generated `go.mod` will include a `replace` directive pointing at the local gofront source so the scaffold builds against the working tree.
+
+After publishing GoFront to a remote module path you can run `gofront init` with that module path as the template dependency instead.
+
 ## HTML Setup
 
 Create `public/index.html`:
@@ -130,14 +137,16 @@ Create `public/index.html`:
 
 ## Tailwind CSS
 
-GoFront automatically builds Tailwind when it finds `src/styles.css`.
+GoFront automatically builds Tailwind when it finds `src/styles.css` (or `public/styles.css` as a fallback).
 
-Default files:
+Default files created by the scaffold when styles are enabled:
 
 - `src/styles.css`
 - `tailwind.config.js`
 
-The build pipeline will generate `dist/styles.css` and link it into the built HTML.
+The build pipeline will generate `dist/styles.css`, inject a `<link rel="stylesheet" href="styles.css">` into the built `dist/index.html`, and copy any static assets into `dist/assets/`.
+
+Tooling: GoFront prefers a locally-installed `tailwindcss` binary and will fall back to `npx tailwindcss@3.4.17` when no local binary is available.
 
 Example `src/styles.css`:
 
@@ -199,6 +208,10 @@ func main() {
     })
 }
 ```
+
+Notes:
+- Prefer `gofront.Run(func(){ ... })` as the application entrypoint so the WebAssembly runtime stays alive after handlers register. Returning from `main` will cause the Go program to exit and the wasm module to stop handling events.
+- `gofront.Wait()` remains available for advanced or manual lifecycle control when `Run`'s convenience isn't desired.
 
 ## Development Mode
 

@@ -1,4 +1,4 @@
-package gofront
+package browser
 
 import (
 	"fmt"
@@ -50,7 +50,7 @@ func (LocationAPI) Href() string         { return locationHref() }
 func (LocationAPI) Pathname() string     { return locationPathname() }
 func (LocationAPI) Hash() string         { return locationHash() }
 func (LocationAPI) Reload()              { locationReload() }
-func (LocationAPI) Navigate(path string) { Navigate(path) }
+func (LocationAPI) Navigate(path string) { _ = Navigate(path) }
 
 func Timer(duration time.Duration, callback func()) TimerHandle {
 	timer := time.AfterFunc(duration, callback)
@@ -75,3 +75,8 @@ func Interval(period time.Duration, callback func()) TimerHandle {
 }
 
 func stringsJoin(values []string) string { return strings.Join(values, ", ") }
+
+func Navigate(path string) error {
+	historyPush(path)
+	return nil
+}
