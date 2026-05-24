@@ -58,6 +58,11 @@ func moduleFile(root string, moduleName string) (string, error) {
 			builder.WriteString("\nrequire gofront v0.0.0\n")
 			builder.WriteString(fmt.Sprintf("replace gofront => %s\n", filepath.ToSlash(rel)))
 		}
+	} else {
+		// When no local gofront module is present, scaffold against the
+		// published module path and tag so generated apps can `go get` the
+		// released dependency. Update this tag when releasing newer versions.
+		builder.WriteString("\nrequire github.com/Alazar42/GoFront v0.0.1\n")
 	}
 
 	return builder.String(), nil
