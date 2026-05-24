@@ -128,8 +128,7 @@ func tailwindConfigFile() string {
 func appFile() string {
 	// .gox component with script, styles, and template blocks (Svelte-like format)
 	// Script block contains Go code (variables, event handlers)
-	// Style block contains CSS (scoped to this component via .module.css)
-	// Template block contains JSX-like structure
+	// Template block contains JSX-like structure with on:click={handler} syntax
 	return `<script>
 import (
 	"strconv"
@@ -140,7 +139,7 @@ var count = 0
 var bindOnce sync.Once
 
 func renderCount() {
-	_ = GoFront.SetText("#counter-value", strconv.Itoa(count))
+	_ = GoFront.SetText("#counter-display", strconv.Itoa(count))
 }
 
 func incrementCount() {
@@ -155,31 +154,20 @@ func resetCount() {
 
 func init() {
 	bindOnce.Do(func() {
-		GoFront.RegisterEvent("#increment", "click", func() {
-			incrementCount()
-		})
-		GoFront.RegisterEvent("#reset", "click", func() {
-			resetCount()
-		})
+		renderCount()
 	})
-	renderCount()
 }
 </script>
 
-<style>
-.app-root {
-  padding: 2rem;
-  max-width: 800px;
-  margin: 0 auto;
-}
-</style>
-
 <template>
-<Div class="app-root">
-  <Div id="counter-value" class="text-7xl font-black text-cyan-300">0</Div>
-  <Div class="mt-4">
-    <Button id="increment">Increment</Button>
-    <Button id="reset">Reset</Button>
+<Div class="flex h-screen items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
+  <Div class="gofront-card p-12">
+    <Div class="mb-2 text-center text-sm font-semibold uppercase tracking-widest text-cyan-300/70">Counter App</Div>
+    <Div class="text-center text-7xl font-black tracking-tight text-cyan-300" id="counter-display">0</Div>
+    <Div class="mt-8 flex gap-4 justify-center">
+      <Button on:click={incrementCount} class="px-8 py-3 bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-bold rounded-lg transition transform hover:scale-105 active:scale-95">+</Button>
+      <Button on:click={resetCount} class="px-8 py-3 bg-red-500 hover:bg-red-600 text-slate-950 font-bold rounded-lg transition transform hover:scale-105 active:scale-95">Reset</Button>
+    </Div>
   </Div>
 </Div>
 </template>
@@ -187,43 +175,55 @@ func init() {
 }
 
 func componentFile() string {
-	// .gox component template with optional script, style, and template blocks
-	return `<style>
-.gofront-card {
-  border-radius: 0.75rem;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(255, 255, 255, 0.05);
-  padding: 1rem;
-  max-width: 50rem;
-  text-align: center;
+	// .gox component: Counter display component with on:click event handlers
+	return `<script>
+import "strconv"
+
+var localCount = 0
+
+func handleIncrement() {
+	localCount++
+	_ = GoFront.SetText("#local-counter", strconv.Itoa(localCount))
 }
-</style>
+
+func handleDecrement() {
+	if localCount > 0 {
+		localCount--
+	}
+	_ = GoFront.SetText("#local-counter", strconv.Itoa(localCount))
+}
+</script>
 
 <template>
-<Div class="gofront-card">
-  <Text>Counter Component</Text>
+<Div class="gofront-card p-8">
+  <Div class="text-sm font-semibold uppercase tracking-widest text-cyan-300/70 mb-4">Reusable Counter</Div>
+  <Div class="text-5xl font-bold text-cyan-300 mb-6 text-center" id="local-counter">0</Div>
+  <Div class="flex gap-3 justify-center">
+    <Button on:click={handleDecrement} class="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-slate-100 font-semibold rounded-lg transition hover:bg-slate-500">−</Button>
+    <Button on:click={handleIncrement} class="px-6 py-2 bg-slate-700 hover:bg-slate-600 text-slate-100 font-semibold rounded-lg transition hover:bg-slate-500">+</Button>
+  </Div>
 </Div>
 </template>
 `
 }
 
 func pageFile() string {
-	// .gox page template (pages are automatically suffixed with "Page" in function name)
-	return `<style>
-.home-page {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-</style>
-
-<template>
-<Div class="home-page">
-  <Div class="mb-4 text-sm font-medium uppercase tracking-widest text-cyan-300/80">GoFront Starter</Div>
-  <Div id="counter" class="text-7xl font-black tracking-tight text-cyan-300">0</Div>
-  <Div class="mt-4">
-    <Button id="increment">Increment</Button>
-    <Button id="reset">Reset</Button>
+	// .gox page template showcasing layout
+	return `<template>
+<Div class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-8">
+  <Div class="max-w-2xl mx-auto">
+    <Div class="mb-12 text-center">
+      <Div class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-cyan-400 mb-2">GoFront + Tailwind</Div>
+      <Div class="text-slate-400">Beautiful React-like components with Go WebAssembly</Div>
+    </Div>
+    <Div class="space-y-6">
+      <Div class="gofront-card p-8">
+        <Div class="text-sm font-semibold uppercase tracking-widest text-cyan-300/70 mb-4">Welcome</Div>
+        <Div class="text-slate-200 leading-relaxed">
+          <Text>This is a GoFront app. Build your UI with .gox components and Go!</Text>
+        </Div>
+      </Div>
+    </Div>
   </Div>
 </Div>
 </template>
