@@ -1,14 +1,14 @@
 package main
 
-import "gofront"
+import "github.com/Alazar42/GoFront"
 
 func main() {
-	gofront.Run(func() {
-		count := gofront.State(0)
-		button := gofront.Query("#increment")
+	GoFront.Run(func() {
+		count := GoFront.State(0)
+		button := GoFront.Query("#increment")
 		button.OnClick(func() {
 			count.Set(count.Get() + 1)
-			gofront.Query("#counter").SetText(count.Get())
+			GoFront.Query("#counter").SetText(count.Get())
 		})
 	})
 }

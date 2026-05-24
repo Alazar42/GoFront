@@ -6,8 +6,8 @@ import (
 	"net/http"
 	"os"
 
-	"gofront/internal/config"
-	"gofront/internal/server"
+	"github.com/Alazar42/GoFront/internal/config"
+	"github.com/Alazar42/GoFront/internal/server"
 )
 
 func runServe(args []string) error {

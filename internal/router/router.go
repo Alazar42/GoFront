@@ -1,8 +1,8 @@
 package router
 
 import (
-	"gofront/internal/component"
-	"gofront/runtime"
+	"github.com/Alazar42/GoFront/internal/component"
+	"github.com/Alazar42/GoFront/runtime"
 )
 
 type RouteHandler func() component.Component

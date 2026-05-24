@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"gofront/internal/cli"
+	"github.com/Alazar42/GoFront/internal/cli"
 )
 
 func main() {

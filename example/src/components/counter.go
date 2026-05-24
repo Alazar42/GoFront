@@ -1,9 +1,9 @@
 package components
 
-import "gofront"
+import "github.com/Alazar42/GoFront"
 
-func Counter() gofront.Component {
-	return gofront.Div(
-		gofront.Text("Hello"),
+func Counter() GoFront.Component {
+	return GoFront.Div(
+		GoFront.Text("Hello"),
 	)
 }

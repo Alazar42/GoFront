@@ -2,6 +2,4 @@ module example
 
 go 1.24
 
-require gofront v0.0.0
-
-replace gofront => ..
+require github.com/Alazar42/GoFront v0.0.1

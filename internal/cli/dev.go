@@ -7,9 +7,9 @@ import (
 	"os"
 	"time"
 
-	"gofront/internal/compiler"
-	"gofront/internal/config"
-	"gofront/internal/server"
+	"github.com/Alazar42/GoFront/internal/compiler"
+	"github.com/Alazar42/GoFront/internal/config"
+	"github.com/Alazar42/GoFront/internal/server"
 )
 
 func runDev(args []string) error {

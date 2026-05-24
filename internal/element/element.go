@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"gofront/runtime"
+	"github.com/Alazar42/GoFront/runtime"
 )
 
 type Element struct {

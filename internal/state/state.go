@@ -3,7 +3,7 @@ package state
 import (
 	"sync"
 
-	"gofront/runtime"
+	"github.com/Alazar42/GoFront/runtime"
 )
 
 type StateValue[T any] struct {

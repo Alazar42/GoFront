@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 
-	"gofront/internal/project"
+	"github.com/Alazar42/GoFront/internal/project"
 )
 
 func runInit(args []string) error {

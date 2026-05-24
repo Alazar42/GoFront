@@ -6,7 +6,7 @@ import (
 	"sort"
 	"strings"
 
-	"gofront/runtime"
+	"github.com/Alazar42/GoFront/runtime"
 )
 
 type Attribute struct {

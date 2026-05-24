@@ -4,8 +4,8 @@ import (
 	"flag"
 	"fmt"
 
-	"gofront/internal/compiler"
-	"gofront/internal/config"
+	"github.com/Alazar42/GoFront/internal/compiler"
+	"github.com/Alazar42/GoFront/internal/config"
 )
 
 func runBuild(args []string) error {

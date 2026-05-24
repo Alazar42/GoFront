@@ -3,12 +3,12 @@ package gofront
 import (
 	"time"
 
-	"gofront/internal/browser"
-	"gofront/internal/component"
-	"gofront/internal/element"
-	"gofront/internal/lifecycle"
-	"gofront/internal/router"
-	"gofront/internal/state"
+	"github.com/Alazar42/GoFront/internal/browser"
+	"github.com/Alazar42/GoFront/internal/component"
+	"github.com/Alazar42/GoFront/internal/element"
+	"github.com/Alazar42/GoFront/internal/lifecycle"
+	"github.com/Alazar42/GoFront/internal/router"
+	"github.com/Alazar42/GoFront/internal/state"
 )
 
 type Response = browser.Response
