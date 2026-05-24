@@ -160,14 +160,21 @@ func init() {
 </script>
 
 <template>
-<Div class="flex h-screen items-center justify-center bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-  <Div class="gofront-card p-12">
-    <Div class="mb-2 text-center text-sm font-semibold uppercase tracking-widest text-cyan-300/70">Counter App</Div>
-    <Div class="text-center text-7xl font-black tracking-tight text-cyan-300" id="counter-display">0</Div>
-    <Div class="mt-8 flex gap-4 justify-center">
-      <Button on:click={incrementCount} class="px-8 py-3 bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-bold rounded-lg transition transform hover:scale-105 active:scale-95">+</Button>
-      <Button on:click={resetCount} class="px-8 py-3 bg-red-500 hover:bg-red-600 text-slate-950 font-bold rounded-lg transition transform hover:scale-105 active:scale-95">Reset</Button>
+<Div class="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 p-8">
+  <Div class="max-w-2xl mx-auto space-y-8">
+    <Div>
+      <Div class="text-4xl font-black text-transparent bg-clip-text bg-gradient-to-r from-cyan-300 to-cyan-400 mb-2">GoFront App</Div>
+      <Div class="text-slate-400">Component composition with on:event handlers</Div>
     </Div>
+    <Div class="gofront-card p-12">
+      <Div class="mb-2 text-center text-sm font-semibold uppercase tracking-widest text-cyan-300/70">Main Counter</Div>
+      <Div class="text-center text-7xl font-black tracking-tight text-cyan-300" id="counter-display">0</Div>
+      <Div class="mt-8 flex gap-4 justify-center">
+        <Button on:click={incrementCount} class="px-8 py-3 bg-cyan-500 hover:bg-cyan-600 text-slate-950 font-bold rounded-lg transition transform hover:scale-105 active:scale-95">+</Button>
+        <Button on:click={resetCount} class="px-8 py-3 bg-red-500 hover:bg-red-600 text-slate-950 font-bold rounded-lg transition transform hover:scale-105 active:scale-95">Reset</Button>
+      </Div>
+    </Div>
+    <Counter />
   </Div>
 </Div>
 </template>
@@ -175,7 +182,9 @@ func init() {
 }
 
 func componentFile() string {
-	// .gox component: Counter display component with on:click event handlers
+	// .gox component: Reusable counter with on:click event handlers
+	// Shows component composition: this can be imported and used in other components
+	// Note: Custom components like <Counter /> are identified by PascalCase tags
 	return `<script>
 import "strconv"
 

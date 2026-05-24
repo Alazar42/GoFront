@@ -351,28 +351,58 @@ func renderGoxNode(node goxNode) string {
 	if node.isText {
 		return fmt.Sprintf("GoFront.Text(%q)", node.text)
 	}
-	name := strings.Title(strings.ToLower(node.tag))
-	if strings.EqualFold(name, "Text") {
-		if len(node.children) == 0 {
-			return "GoFront.Text(\"\")"
-		}
-		parts := make([]string, 0, len(node.children))
-		for _, child := range node.children {
-			if child.isText {
-				parts = append(parts, child.text)
-			} else {
-				parts = append(parts, renderGoxNode(child))
-			}
-		}
-		return fmt.Sprintf("GoFront.Text(%q)", strings.Join(parts, ""))
+
+	// List of known GoFront HTML element functions
+	knownElements := map[string]bool{
+		"div": true, "span": true, "button": true, "text": true,
+		"h1": true, "h2": true, "h3": true, "h4": true, "h5": true, "h6": true,
+		"p": true, "main": true, "section": true, "header": true, "footer": true,
 	}
+
+	tag := strings.ToLower(node.tag)
+
+	// Check if it's a known HTML element
+	if knownElements[tag] {
+		// HTML element: use GoFront prefix
+		name := strings.Title(tag)
+		if name == "Text" {
+			if len(node.children) == 0 {
+				return "GoFront.Text(\"\")"
+			}
+			parts := make([]string, 0, len(node.children))
+			for _, child := range node.children {
+				if child.isText {
+					parts = append(parts, child.text)
+				} else {
+					parts = append(parts, renderGoxNode(child))
+				}
+			}
+			return fmt.Sprintf("GoFront.Text(%q)", strings.Join(parts, ""))
+		}
+		args := make([]string, 0, len(node.children))
+		for _, child := range node.children {
+			args = append(args, renderGoxNode(child))
+		}
+		expr := fmt.Sprintf("GoFront.%s()", name)
+		if len(args) > 0 {
+			expr = fmt.Sprintf("GoFront.%s(%s)", name, strings.Join(args, ", "))
+		}
+		if len(node.attrs) > 0 {
+			expr += ".With(" + strings.Join(node.attrs, ", ") + ")"
+		}
+		return expr
+	}
+
+	// Custom component: use PascalCase reference directly (e.g., Counter, HomePage)
+	// These are user-defined component functions in the same package
+	name := node.tag
 	args := make([]string, 0, len(node.children))
 	for _, child := range node.children {
 		args = append(args, renderGoxNode(child))
 	}
-	expr := fmt.Sprintf("GoFront.%s()", name)
+	expr := fmt.Sprintf("%s()", name)
 	if len(args) > 0 {
-		expr = fmt.Sprintf("GoFront.%s(%s)", name, strings.Join(args, ", "))
+		expr = fmt.Sprintf("%s(%s)", name, strings.Join(args, ", "))
 	}
 	if len(node.attrs) > 0 {
 		expr += ".With(" + strings.Join(node.attrs, ", ") + ")"
